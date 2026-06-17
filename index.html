@@ -571,6 +571,33 @@ function adaptExercise(ex, benchmarks) {
 }
 
 // ─── MARKDOWN GENERATORS ──────────────────────────────────────────────────────
+function benchmarkMD(params) {
+ const {ptKey,ptLabel,date,benchmarks} = params;
+ const d = new Date(date);
+ const dateStr = d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const rows = BENCHMARKS.map(b=>{
+  const v = benchmarks['b'+ptKey+'_'+b.id]||'';
+  return '| '+b.label+' | '+(v||'—')+' | '+b.unit+' |';
+ }).join('\n');
+ return `---
+date: ${date}
+type: benchmark
+test_point: W${ptKey}
+tags: [benchmark, week-${ptKey}]
+---
+
+# Benchmarks — ${ptLabel}
+
+**Date:** ${dateStr}
+
+| Test | Result | Unit |
+|------|--------|------|
+${rows}
+
+---
+*Training OS · [[Training Home]] · [[Benchmarks]]*`;
+}
+
 function sessionMD(params) {
  const {phase,day,week,date,duration,sleep,setReps,setWeights,
         skillChecks,warmupChecks,coreChecks,cooldownChecks,neckChecks,notes,benchmarks} = params;
@@ -1450,14 +1477,26 @@ function App() {
  // ─────────────────────────────────────────────────────────────────────────────
  function BenchTab() {
   const [point,setPoint] = useState(0);
+  const [saved,setSaved] = useState(false);
   const ptKey = BENCH_PT_KEYS[point];
+  const ptLabel = BENCH_POINTS[point];
   function setVal(id,v) {
    const k = 'b'+ptKey+'_'+id;
    setBenchmarks(p=>({...p,[k]:v}));
+   setSaved(false);
   }
   function getVal(id) {
    return benchmarks['b'+ptKey+'_'+id]||'';
   }
+  async function saveToVault() {
+   const date = todayStr();
+   const md = benchmarkMD({ptKey,ptLabel,date,benchmarks});
+   const filename = date+'-W'+ptKey+'-Benchmarks.md';
+   const wrote = await writeVaultFile('Health/Training/Benchmarks/'+filename,md);
+   if(!wrote) vaultFallback('Benchmarks/'+filename,md);
+   setSaved(true);
+  }
+  const hasAny = BENCHMARKS.some(b=>getVal(b.id));
   return html`<div style=${{padding:16}}>
    <div style=${{fontWeight:800,fontSize:18,color:C.navy,marginBottom:4}}>Benchmarks</div>
    <div style=${{fontSize:12,color:'#888',marginBottom:14}}>
@@ -1466,7 +1505,7 @@ function App() {
    <!-- Point selector -->
    <div style=${{display:'flex',gap:6,marginBottom:16,overflowX:'auto',paddingBottom:2}}>
     ${BENCH_POINTS.map((bp,i)=>html`
-     <button key=${i} onClick=${()=>setPoint(i)} style=${{
+     <button key=${i} onClick=${()=>{setPoint(i);setSaved(false);}} style=${{
       padding:'7px 12px',borderRadius:8,border:'none',whiteSpace:'nowrap',
       background:point===i?C.navy:'#eee',color:point===i?'#fff':'#666',
       fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>${bp}</button>
@@ -1488,6 +1527,15 @@ function App() {
      />
     </div>
    `)}
+   <!-- Save to vault -->
+   ${hasAny&&html`
+    <button onClick=${saveToVault} style=${{
+     width:'100%',padding:'13px',borderRadius:10,border:'none',marginTop:4,
+     background:saved?'#2d7a5f':'#1a1a2e',color:'#fff',
+     fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+     ${saved?'✅ Saved to Vault':'💾 Save to Obsidian'}
+    </button>
+   `}
   </div>`;
  }
 
@@ -1694,7 +1742,7 @@ loadVaultHandle().then(()=>{
 
 <script>
 if('serviceWorker' in navigator){
- const sw=`const CACHE='tos-v515';
+ const sw=`const CACHE='tos-v516';
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll([self.location.href])));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));});
 self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
