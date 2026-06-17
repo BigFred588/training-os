@@ -934,7 +934,7 @@ function App() {
    filename = date+'-'+dayData.day+'.md';
    subfolder = 'Flex';
   }
-  const wrote = await writeVaultFile('Health/Training/'+subfolder+'/'+filename, md);
+  const wrote = await writeVaultFile(subfolder+'/'+filename, md);
   if(!wrote) vaultFallback(subfolder+'/'+filename, md);
 
   setSessionStage('done');
@@ -1492,11 +1492,10 @@ function App() {
    const date = todayStr();
    const md = benchmarkMD({ptKey,ptLabel,date,benchmarks});
    const filename = date+'-W'+ptKey+'-Benchmarks.md';
-   const wrote = await writeVaultFile('Health/Training/Benchmarks/'+filename,md);
+   const wrote = await writeVaultFile('Benchmarks/'+filename,md);
    if(!wrote) vaultFallback('Benchmarks/'+filename,md);
    setSaved(true);
   }
-  const hasAny = BENCHMARKS.some(b=>getVal(b.id));
   return html`<div style=${{padding:16}}>
    <div style=${{fontWeight:800,fontSize:18,color:C.navy,marginBottom:4}}>Benchmarks</div>
    <div style=${{fontSize:12,color:'#888',marginBottom:14}}>
@@ -1528,14 +1527,12 @@ function App() {
     </div>
    `)}
    <!-- Save to vault -->
-   ${hasAny&&html`
-    <button onClick=${saveToVault} style=${{
-     width:'100%',padding:'13px',borderRadius:10,border:'none',marginTop:4,
-     background:saved?'#2d7a5f':'#1a1a2e',color:'#fff',
-     fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-     ${saved?'✅ Saved to Vault':'💾 Save to Obsidian'}
-    </button>
-   `}
+   <button onClick=${saveToVault} style=${{
+    width:'100%',padding:'13px',borderRadius:10,border:'none',marginTop:4,
+    background:saved?'#2d7a5f':'#1a1a2e',color:'#fff',
+    fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+    ${saved?'✅ Saved to Vault':'💾 Save to Obsidian'}
+   </button>
   </div>`;
  }
 
@@ -1551,7 +1548,7 @@ function App() {
    setCheckins(p=>[...p,entry]);
    const md = checkinMD({week:currentWeek,phase:phaseIdx+1,date:todayStr(),data:form});
    const filename = todayStr()+'-W'+currentWeek+'-Checkin.md';
-   const wrote = await writeVaultFile('Health/Training/Check-ins/'+filename,md);
+   const wrote = await writeVaultFile('Check-ins/'+filename,md);
    if(!wrote) vaultFallback('Check-ins/'+filename,md);
    setSent(true);
   }
@@ -1742,7 +1739,7 @@ loadVaultHandle().then(()=>{
 
 <script>
 if('serviceWorker' in navigator){
- const sw=`const CACHE='tos-v516';
+ const sw=`const CACHE='tos-v518';
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll([self.location.href])));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));});
 self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
